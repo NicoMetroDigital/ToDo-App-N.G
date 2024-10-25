@@ -1,50 +1,65 @@
 import React, { useState, useEffect } from "react";
-import ToDoForm from "./components/ToDoForm";
-import ToDoList from "./components/ToDoList";
-import './App.css';
+import ToDoForm from "./ToDoForm.js";
+import ToDoList from "./ToDoList.js";
+import { Container, Row, Col } from "react-bootstrap";
+import "./App.css";
 
-const App = () => {
+
+
+function App() {
   const [todos, setTodos] = useState([]);
-  const [editTodo, setEditTodo] = useState(null);
-
 
   useEffect(() => {
-    const initialTodos = [
-      { _id: 1, title: "First Task", description: "This is the first task." },
-      { _id: 2, title: "Second Task", description: "This is the second task." }
-    ];
-    setTodos(initialTodos);
+    fetch("http://localhost:5000/todos")
+        .then((response) => response.json())
+        .then((data) => setTodos(data));
   }, []);
 
-  // Create new todo
-  const addTodo = (newTodo) => {
-    setTodos([...todos, { _id: todos.length + 1, ...newTodo }]);
+  const addToDo = (todo) => {
+    fetch("http://localhost:5000/todos", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(todo),
+    })
+        .then((response) => response.json())
+        .then((newTodo) => setTodos([...todos, newTodo]));
   };
 
-  // Update an existing todo
-  const updateTodo = (updatedTodo) => {
-    setTodos(todos.map(t => t._id === updatedTodo._id ? updatedTodo : t));
-    setEditTodo(null);
+  const updateToDo = (id, updatedTodo) => {
+    fetch(`http://localhost:5000/todos/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updatedTodo),
+    })
+        .then((response) => response.json())
+        .then((newTodo) => {
+          setTodos(todos.map((todo) => (todo._id === id ? newTodo : todo)));
+        });
   };
 
-  // Delete todo
-  const deleteTodo = (id) => {
-    setTodos(todos.filter(todo => todo._id !== id));
-  };
-
-  // Set the todo to be edited
-  const editHandler = (todo) => {
-    setEditTodo(todo);
+  const deleteToDo = (id) => {
+    fetch(`http://localhost:5000/todos/${id}`, {
+      method: "DELETE",
+    }).then(() => {
+      setTodos(todos.filter((todo) => todo._id !== id));
+    });
   };
 
   return (
-    <div className="App">
-      <h1>To-Do List</h1>
-      <ToDoForm addTodo={addTodo} editTodo={editTodo} updateTodo={updateTodo} />
-      <ToDoList todos={todos} deleteTodo={deleteTodo} editHandler={editHandler} />
-    </div>
+      <Container className="my-5">
+        <Row className="justify-content-center">
+          <Col md={8}>
+            <h1 className="text-center mb-4">To-Do List</h1>
+            <ToDoForm addToDo={addToDo} />
+            <ToDoList todos={todos} updateToDo={updateToDo} deleteToDo={deleteToDo} />
+          </Col>
+        </Row>
+      </Container>
   );
-};
+}
 
 export default App;
-
